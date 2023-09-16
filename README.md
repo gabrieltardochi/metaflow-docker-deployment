@@ -14,10 +14,10 @@ You should be able to find that
 
 Wait a few seconds and verify that everything is working as expected by visually inspecting the [Metaflow UI](localhost:8083) or pinging containers:
 ```console
-curl -v localhost:8081/ping localhost:8082/ping localhost:8083/ping
+$ curl -v localhost:8081/ping localhost:8082/ping localhost:8083/ping
 ```
 ![Metaflow UI](./docs/image-1.png)  
 To shut everything down, remember to run:
 ```console
-docker-compose -f docker-compose-metaflow.yml down
+$ docker-compose -f docker-compose-metaflow.yml down
 ```
