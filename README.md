@@ -1,5 +1,5 @@
 # metaflow-docker-deployment
-Latest version of Metaflow Service and a Metaflow UI to inspect Flow's metadata and results. See [why Metaflow](https://docs.metaflow.org/introduction/why-metaflow).
+Latest version of Metaflow Service and a Metaflow UI to inspect Flow's metadata and results. See [why Metaflow](https://docs.metaflow.org/introduction/why-metaflow).  
 ![What is Metaflow](./docs/image.png)
 ## Local Deployment
 Run the compose file to up Metaflow UI, metadata/migration service and database:
