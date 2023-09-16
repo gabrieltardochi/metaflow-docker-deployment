@@ -7,10 +7,10 @@ Run the compose file to up Metaflow UI, metadata/migration service and database:
 $ docker-compose -f docker-compose-metaflow.yml up -d
 ```
 You should be able to find that
-* Metaflow UI service is available at `localhost:8083`.
-* Metaflow metadata service is available at `localhost:8081`;
-* Metaflow migration service is available at `localhost:8082`;
-* Metaflow database (postgresql) is available at `localhost:5432`.
+* Metaflow UI service is available at `localhost:8083`
+* Metaflow metadata service is available at `localhost:8081`
+* Metaflow migration service is available at `localhost:8082`
+* Metaflow database (postgresql) is available at `localhost:5432`
 
 Wait a few seconds and verify that everything is working as expected by visually inspecting the [Metaflow UI](localhost:8083) or pinging containers:
 ```console
