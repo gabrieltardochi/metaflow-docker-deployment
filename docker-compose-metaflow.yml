@@ -5,22 +5,42 @@ services:
     container_name: metaflow-ui-server
     restart: always
     ports:
-      - "8083:8083"
-    env_file:
-      - metaflow_ui_server.env
+      - "${MUS_PORT}:8083"
+    environment:
+      - MF_METADATA_DB_HOST=metaflow-database
+      - MF_METADATA_DB_PORT=5432
+      - MF_METADATA_DB_USER=${MD_USER}
+      - MF_METADATA_DB_PSWD=${MD_PASSWORD}
+      - MF_METADATA_DB_NAME=${MD_DB}
+      - MF_UI_METADATA_PORT=8083
+      - MF_UI_METADATA_HOST=0.0.0.0
+      - UI_ENABLED=1
+      - AWS_ACCESS_KEY_ID=${MM_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${MM_SECRET_KEY}
     command: ["/opt/latest/bin/python3", "-m", "services.ui_backend_service.ui_server"]
     depends_on:
       - metaflow-database
+      - metaflow-minio
 
   metaflow-metadata-service:
     image: netflixoss/metaflow_metadata_service:v2.4.3
     container_name: metaflow-metadata-service
     restart: always
     ports:
-      - "8081:8080"
-      - "8082:8082"
-    env_file:
-      - metaflow_metadata_service.env
+      - "${MMS_METADATA_PORT}:8080"
+      - "${MMS_MIGRATION_PORT}:8082"
+    environment:
+      - MF_METADATA_DB_HOST=metaflow-database
+      - MF_METADATA_DB_PORT=5432
+      - MF_METADATA_DB_USER=${MD_USER}
+      - MF_METADATA_DB_PSWD=${MD_PASSWORD}
+      - MF_METADATA_DB_NAME=${MD_DB}
+      - MF_MIGRATION_ENDPOINTS_ENABLED=0
+      - MF_METADATA_PORT=8080
+      - MF_METADATA_HOST=0.0.0.0
+      - MF_MIGRATION_PORT=8082
+      - AWS_ACCESS_KEY_ID=${MM_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${MM_SECRET_KEY}
     depends_on:
       - metaflow-database
       - metaflow-ui-server
@@ -29,17 +49,54 @@ services:
     image: "postgres:13-alpine"
     container_name: metaflow-database
     restart: always
-    env_file:
-      - metaflow_database.env
+    environment:
+      - POSTGRES_USER=${MD_USER}
+      - POSTGRES_PASSWORD=${MD_PASSWORD}
+      - POSTGRES_DB=${MD_DB}
     ports:
-      - "5432:5432"
+      - "${MD_PORT}:5432"
     command: ["postgres", "-c", "log_statement=none", "-c", "wal_level=logical"]
     volumes:
-      - metaflow-database_dev_data:/var/lib/postgresql/data2
+      - metaflow-database-volume:/var/lib/postgresql/data2
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  metaflow-minio:
+    container_name: metaflow-minio
+    image: minio/minio:RELEASE.2023-09-16T01-01-47Z
+    environment:
+      - MINIO_ACCESS_KEY=${MM_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MM_SECRET_KEY}
+    volumes:
+      - metaflow-minio-volume:/minio_data
+    command: minio server /minio_data --address :9000 --console-address :9001
+    ports:
+      - ${MM_S3_API_PORT}:9000
+      - ${MM_CONSOLE_PORT}:9001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  metaflow-minio-create-bucket:
+    container_name: metaflow-minio-create-bucket
+    image: minio/mc:RELEASE.2023-09-13T23-08-58Z
+    depends_on:
+      - metaflow-minio
+    environment:
+    - MINIO_ACCESS_KEY=${MM_ACCESS_KEY}
+    - MINIO_SECRET_KEY=${MM_SECRET_KEY}
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://metaflow-minio:9000 ${MM_ACCESS_KEY} ${MM_SECRET_KEY};
+      /usr/bin/mc mb --ignore-existing myminio/metaflow;
+      exit 0;
+      "
+
 volumes:
-  metaflow-database_dev_data:
+  metaflow-database-volume:
+  metaflow-minio-volume:
