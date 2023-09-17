@@ -17,10 +17,18 @@ services:
       - UI_ENABLED=1
       - AWS_ACCESS_KEY_ID=${MM_ACCESS_KEY}
       - AWS_SECRET_ACCESS_KEY=${MM_SECRET_KEY}
+      - FEATURE_ARTIFACT_SEARCH=1
+      - FEATURE_ARTIFACT_TABLE=1
+      - METAFLOW_DEFAULT_DATASTORE=s3
+      - METAFLOW_DATASTORE_SYSROOT_S3=s3://metaflow/Datastore
+      - METAFLOW_S3_ENDPOINT_URL=http://metaflow-minio:9000/
     command: ["/opt/latest/bin/python3", "-m", "services.ui_backend_service.ui_server"]
     depends_on:
       - metaflow-database
+      - metaflow-metadata-service
       - metaflow-minio
+    networks:
+      - metaflow-network
 
   metaflow-metadata-service:
     image: netflixoss/metaflow_metadata_service:v2.4.3
@@ -43,10 +51,11 @@ services:
       - AWS_SECRET_ACCESS_KEY=${MM_SECRET_KEY}
     depends_on:
       - metaflow-database
-      - metaflow-ui-server
+    networks:
+      - metaflow-network
 
   metaflow-database:
-    image: "postgres:13-alpine"
+    image: "postgres:15-alpine"
     container_name: metaflow-database
     restart: always
     environment:
@@ -57,12 +66,14 @@ services:
       - "${MD_PORT}:5432"
     command: ["postgres", "-c", "log_statement=none", "-c", "wal_level=logical"]
     volumes:
-      - metaflow-database-volume:/var/lib/postgresql/data2
+      - metaflow-database-volume:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - metaflow-network
 
   metaflow-minio:
     container_name: metaflow-minio
@@ -81,12 +92,12 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+    networks:
+      - metaflow-network
 
   metaflow-minio-create-bucket:
     container_name: metaflow-minio-create-bucket
     image: minio/mc:RELEASE.2023-09-13T23-08-58Z
-    depends_on:
-      - metaflow-minio
     environment:
     - MINIO_ACCESS_KEY=${MM_ACCESS_KEY}
     - MINIO_SECRET_KEY=${MM_SECRET_KEY}
@@ -96,7 +107,17 @@ services:
       /usr/bin/mc mb --ignore-existing myminio/metaflow;
       exit 0;
       "
+    depends_on:
+      - metaflow-minio
+    networks:
+      - metaflow-network
+
+networks:
+  metaflow-network:
+    name: metaflow-network
 
 volumes:
   metaflow-database-volume:
+    name: metaflow-database-volume
   metaflow-minio-volume:
+    name: metaflow-minio-volume
