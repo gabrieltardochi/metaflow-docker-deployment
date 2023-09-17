@@ -1,0 +1,8 @@
+{
+    "METAFLOW_SERVICE_URL": "http://localhost:8081",
+    "METAFLOW_DEFAULT_METADATA": "service",
+    "METAFLOW_DEFAULT_DATASTORE": "s3",
+    "METAFLOW_DATASTORE_SYSROOT_S3": "s3://metaflow/Datastore",
+    "METAFLOW_DATATOOLS_SYSROOT_S3": "s3://metaflow/Datatools",
+    "METAFLOW_S3_ENDPOINT_URL": "http://localhost:10002/"
+}
